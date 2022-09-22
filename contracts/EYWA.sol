@@ -5,7 +5,7 @@ pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "hardhat/console.sol";
+import "../node_modules/hardhat/console.sol";
 
 contract EYWA {
     using Address for address;
@@ -47,23 +47,39 @@ contract EYWA {
     mapping (address => Score) public score;
     Counters.Counter private totalDeEx;
 
+
+    // Test ground
+
+    bytes32 public resultadoEsperado;
+    bytes public resultadoAluno;
+    function getResultadoEsperado() public view returns(bytes32) {
+        return resultadoEsperado;
+    }
+    function getResultadoAluno() public view returns(bytes32) {
+        return keccak256(abi.encodePacked(resultadoAluno));
+    }
+
+
     // Corrige o exercicio
     function corrigirExercicio(uint256 _exercicioId, uint256 _questaoId, address _targetContract, bytes memory _interface) public returns(bool) {
         bytes memory resultadoChamada = _targetContract.functionCall(
             _interface,
             "Error: Erro ao chamar o exercicio :("
         );
-        // TODO isso aqui precisa definir antes, como testa se n ta definido?
-        require(
-            exercicios[_exercicioId].resultados[_questaoId] == 
-            keccak256(resultadoChamada),
-            "Error: Resposta incorreta"
-        );
+
+        resultadoEsperado = exercicios[_exercicioId].resultados[_questaoId];
+        resultadoAluno = resultadoChamada;
+
+        /*require(exercicios[_exercicioId].resultados[_questaoId] == 
+                keccak256(abi.encodePacked(resultadoChamada)),
+                "Error: Resposta incorreta"
+        );*/
         if(score[msg.sender].exerciciosConcluidos[_exercicioId] == false) {
             score[msg.sender].exerciciosConcluidos[_exercicioId] = true;
             score[msg.sender].totalScore +=1;
             emit Correcao(_exercicioId,_questaoId, msg.sender, _targetContract, true);
         }
+        // TODO emissoes de eventos
         return true;
     }
 
@@ -73,10 +89,10 @@ contract EYWA {
         uint256 exAtual = totalDeEx.current();
 
         for(uint256 i = 0; i < _resultados.length; i++){
-            exercicios[exAtual].resultados[i] = _resultados[i];
+            exercicios[exAtual].resultados.push(_resultados[i]);
         }
         exercicios[exAtual].linkDoExercicio = _linkDoExercicio;
-        // TODO emissoes
+        // TODO emissoes de eventos
     }
 
     // Atualiza o score do aluno quanto ao uso de gasolina
@@ -88,6 +104,7 @@ contract EYWA {
         if(score[_estudante].gasUsado[_exercicio] > _gasUsado) {
             score[_estudante].gasUsado[_exercicio] = _gasUsado;
         }
+        // TODO emissoes de eventos
     }
 
 }
