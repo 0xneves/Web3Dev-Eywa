@@ -1,13 +1,18 @@
-# Sample Hardhat Project
+# EYWA - Corretor de Contratos
+# Exercicio1 - Prova feita pelo estudante
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a script that deploys that contract.
+Esse projeto visa apresentar um modelo de testar a capacidade 
+de vários estudantes a partir de um contrato de professor, o
+grandioso Professor Contract! Veio para corrigir e criar um score
+de eficiencia para os alunos que passarem nos testes.
+Tudo on-chain.
+Tudo transparente.
 
-Try running some of the following tasks:
+Tente rodar os comandos na sequencia para testar a a aplicação.
 
 ```shell
-npx hardhat help
-npx hardhat test
-REPORT_GAS=true npx hardhat test
-npx hardhat node
-npx hardhat run scripts/deploy.js
+pnpm install
+pnpm hardhat compile
+pnpm hardhat test
+
 ```
