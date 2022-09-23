@@ -1,11 +1,17 @@
 // SPDX-License-Identifier: MIT
 
-// Versão a ser utilizada
+// Versão a ser utilizada no compilador (hardhat.config.js)
 pragma solidity ^0.8.9;
 
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "../node_modules/hardhat/console.sol";
+
+/// @title  Contrato Prova
+/// @author Exis
+/// @dev    Usando function call, um contrato mestre de correcao
+//          pode ser invocado para corrigir um contrato. Basta
+//          encodar os argumentos da interface com os parametros
+//          e inserir como parametro na function call. Ver EYWA.sol
 
 contract EYWA {
     using Address for address;
@@ -27,12 +33,12 @@ contract EYWA {
     
     // Mapa de ID do exercício apontando para seu Link
     struct Exercicios {
-        string linkDoExercicio;
-        bytes32[] resultados;
+        string linkDoEnunciado;
+        bytes[] resultados;
     }
     // Mapa que aponta o Score para um endereço
     struct Score {
-        uint256 totalScore;
+        uint256 totalDeExerciciosConcluidos;
         mapping(uint256 => bool) exerciciosConcluidos;
         mapping(uint256 => uint256) gasUsado;
     }
@@ -45,53 +51,41 @@ contract EYWA {
 
     mapping (uint256 => Exercicios) public exercicios;
     mapping (address => Score) public score;
-    Counters.Counter private totalDeEx;
-
-
-    // Test ground
-
-    bytes32 public resultadoEsperado;
-    bytes public resultadoAluno;
-    function getResultadoEsperado() public view returns(bytes32) {
-        return resultadoEsperado;
-    }
-    function getResultadoAluno() public view returns(bytes32) {
-        return keccak256(abi.encodePacked(resultadoAluno));
-    }
-
+    Counters.Counter private totalDeExercicios;
 
     // Corrige o exercicio
-    function corrigirExercicio(uint256 _exercicioId, uint256 _questaoId, address _targetContract, bytes memory _interface) public returns(bool) {
-        bytes memory resultadoChamada = _targetContract.functionCall(
+    function corrigirExercicio(
+        uint256 _exercicioId, 
+        uint256 _questaoId, 
+        address _targetContract, 
+        bytes memory _interface
+    ) public returns(bool) {
+        bytes memory resultadoChamada = _targetContract.functionCall( 
             _interface,
             "Error: Erro ao chamar o exercicio :("
         );
 
-        resultadoEsperado = exercicios[_exercicioId].resultados[_questaoId];
-        resultadoAluno = resultadoChamada;
-
-        /*require(exercicios[_exercicioId].resultados[_questaoId] == 
-                keccak256(abi.encodePacked(resultadoChamada)),
+        require(keccak256(exercicios[_exercicioId].resultados[_questaoId]) == 
+                keccak256(resultadoChamada),
                 "Error: Resposta incorreta"
-        );*/
+        );
         if(score[msg.sender].exerciciosConcluidos[_exercicioId] == false) {
             score[msg.sender].exerciciosConcluidos[_exercicioId] = true;
-            score[msg.sender].totalScore +=1;
+            score[msg.sender].totalDeExerciciosConcluidos +=1;
             emit Correcao(_exercicioId,_questaoId, msg.sender, _targetContract, true);
         }
-        // TODO emissoes de eventos
         return true;
     }
 
     // Dono do contrato insere exercicios
-    function inserirExercicio(string memory _linkDoExercicio, bytes32[] calldata _resultados) public dono() {
-        totalDeEx.increment();
-        uint256 exAtual = totalDeEx.current();
+    function inserirExercicio(string memory _linkDoExercicio, bytes[] calldata _resultados) public dono() {
+        totalDeExercicios.increment();
+        uint256 exercicioAtual = totalDeExercicios.current();
 
         for(uint256 i = 0; i < _resultados.length; i++){
-            exercicios[exAtual].resultados.push(_resultados[i]);
+            exercicios[exercicioAtual].resultados.push(_resultados[i]);
         }
-        exercicios[exAtual].linkDoExercicio = _linkDoExercicio;
+        exercicios[exercicioAtual].linkDoEnunciado = _linkDoExercicio;
         // TODO emissoes de eventos
     }
 
